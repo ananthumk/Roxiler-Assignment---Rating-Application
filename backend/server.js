@@ -28,24 +28,35 @@ let db;
 const initializeDb = async () => {
   try {
     console.log('📁 Using DB:', dbPath);
+    
+   
+    const fs = require('fs');
+    if (process.env.NODE_ENV === 'production') {
+      const dbDir = path.dirname(dbPath);
+      if (!fs.existsSync(dbDir)) {
+        fs.mkdirSync(dbDir, { recursive: true });
+        console.log('✅ Created DB directory:', dbDir);
+      }
+    }
+    
     db = await open({
       filename: dbPath,
       driver: sqlite3.Database,
     });
-  
-    // Make globally available
+    
     global.db = db;
     global.bcrypt = bcrypt;
     
     app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-      console.log(`✅ SQLite ready at: ${dbPath}`);
+      console.log(`Server running on port ${PORT}`);
+      console.log(`SQLite ready at: ${dbPath}`);
     });
   } catch (error) {
-    console.error('❌ DB Connection failed:', error);
+    console.error('DB Connection failed:', error);
     process.exit(1);
   }
 };
+
 
 // Initialize DB 
 initializeDb();
