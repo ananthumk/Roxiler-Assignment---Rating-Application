@@ -16,7 +16,7 @@ const app = express();
 
 // Render SQLite path
 const dbPath = process.env.NODE_ENV === 'production' 
-  ? '/opt/render/db/mydatabase.db'  
+  ? '/app/db/mydatabase.db'  
   : path.join(__dirname, 'mydatabase.db');  
 
 app.use(express.json());
