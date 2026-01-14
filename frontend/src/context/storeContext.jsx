@@ -49,7 +49,7 @@ export const AppProvider = ({ children }) => {
 
   return (
     <AppContext.Provider value={{ 
-      url: 'http://localhost:3000/api', 
+      url: 'https://roxiler-assignment-rating-application.onrender.com/api', 
       currentUser, 
       setCurrentUser, 
       token, 
