@@ -169,7 +169,7 @@ const OwnerDashboard = () => {
                     <div className="flex items-center gap-2 mb-2">
                       <Star className="w-6 h-6 text-yellow-400 fill-current" />
                       <span className="text-xl md:text-2xl font-bold text-gray-900">
-                        {Number(store.averageRating).toFixed(1)}
+                        {Number(store.averageRating).toFixed(1) || 0}
                       </span>
                       <span className="text-sm text-gray-500">
                         ({store.totalRatings} reviews)
