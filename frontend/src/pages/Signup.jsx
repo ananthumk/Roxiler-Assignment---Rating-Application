@@ -12,7 +12,7 @@ const Signup = () => {
         email: '', password: '', address: '', name: '', role: 'user'
     });
     const [errMsg, setErrMsg] = useState('');
-    const { url, setCurrentUser } = useContext(AppContext);
+    const { url, setCurrentUser, setToken } = useContext(AppContext);
     const navigate = useNavigate();
 
     const registerForm = async (e) => {
@@ -31,11 +31,19 @@ const Signup = () => {
                     console.error('Missing token or user in response:', response.data);
                     return;
                 }
-
-                // Clear form
+                
+                setCurrentUser(response.data.user)
+                setToken(response.data.token)
+                
                 setRegister({ email: '', password: '', address: '', name: '', role: 'user' });
 
-                navigate('/login')
+                if(response.data.role === 'admin'){
+                    navigate('/admin')
+                } else if (response.data.role === 'owner'){
+                    navigate('/owner')
+                } else {
+                    navigate('/')
+                }
                 
 
                 setErrMsg('');
@@ -164,7 +172,7 @@ const Signup = () => {
                             </select>
                         </div>
 
-                        {/* Submit Button */}
+                        
                         <button
                             type="submit"
                             className="w-full py-3 px-6 bg-[#071E22] hover:bg-[#071E22]/90 text-white font-bold text-xl rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-[#071E22]/20"
@@ -180,7 +188,7 @@ const Signup = () => {
                         </p>
                     )}
 
-                    {/* Login Link */}
+                    
                     <div className="mt-8 text-center">
                         <p className="text-sm text-gray-600">
                             Already have an account?{' '}

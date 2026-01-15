@@ -11,19 +11,41 @@ import UserDetails from '../components/UserDetails'
 import Footer from '../components/Footer'
 import Loader from '../components/Loader'
 
+const API_STATUS = {
+  INITIAL: 'INITIAL',
+  IN_PROGRESS: 'IN_PROGRESS',
+  SUCCESS: 'SUCCESS',
+  FAILED: 'FAILED',
+};
+
 const AdminDashboard = () => {
   const [users, setUsers] = useState([])
   const [stores, setStores] = useState([])
   const [dashboard, setDashboard] = useState({})
   const [userSearchQuery, setUserSearchQuery] = useState('')
   const [storeSearchQuery, setStoreSearchQuery] = useState('')
-  
-  const [userLoader, setUserLoader] = useState(true)
-  const [storeLoader, setStoreLoader] = useState(true)
+
+  const [userCurrentPage, setUserCurrentPage] = useState(1)
+  const [userPagination, setUserPagination] = useState({
+    totalPages: 0,
+    total: 0
+  })
+
+  const [storeCurrentPage, setStoreCurrentPage] = useState(1)
+  const [storePagination, setStorePagination] = useState({
+    totalPages: 0,
+    total: 0
+  })
+
+  const [userApiStatus, setUserApiStatus] = useState(API_STATUS.INITIAL);
+  const [storeApiStatus, setStoreApiStatus] = useState(API_STATUS.INITIAL);
+  // const [dashboardApiStatus, setDashboardApiStatus] = useState(API_STATUS.INITIAL);
+
 
   const [userSortBy, setUserSortBy] = useState('name')
   const [storeSortBy, setStoreSortBy] = useState('name')
 
+  const [owner, setOwner] = useState([])
 
   const [activeModal, setActiveModal] = useState(null)
   const [selectedId, setSelectedId] = useState(null)
@@ -32,69 +54,131 @@ const AdminDashboard = () => {
 
   const fetchUsers = async () => {
     try {
+      setUserApiStatus(API_STATUS.IN_PROGRESS);
+
       const params = new URLSearchParams({
         search: userSearchQuery,
-        sortBy: userSortBy
-
-      })
+        sortBy: userSortBy,
+        page: userCurrentPage
+      });
 
       const response = await axios.get(`${url}/admin/users?${params}`, {
         headers: { Authorization: `Bearer ${token}` }
-      })
+      });
 
       if (response.status === 200) {
-        setUsers(response.data.users || [])
-        setUserLoader(false)
+        setUsers(response.data.users || []);
+        setUserPagination({
+          totalPages: response.data.pagination.totalPages,
+          total: response.data.pagination.total,
+        });
+        setUserApiStatus(API_STATUS.SUCCESS);
       }
     } catch (error) {
-      console.log('users: ', error)
-      setUsers([])
+      console.log('users:', error);
+      setUsers([]);
+      setUserApiStatus(API_STATUS.FAILED);
     }
+  };
+  
+  const getAllUsers = async () => {
+     try {
+           const response = await axios.get(`${url}/admin/allusers`, {
+             headers: {
+               Authorization: `Bearer ${token}`
+             }
+           });
+           if (response.status === 200) {
+             setOwner(response.data.users || []);
+             console.log('Fetched owner as users:', response.data.users);
+           }
+       } catch(error){
+           console.log('Error fetching users:', error);
+       }
+     
   }
 
   const fetchDashboard = async () => {
     try {
+      // setDashboardApiStatus(API_STATUS.IN_PROGRESS);
+
       const response = await axios.get(`${url}/admin/dashboard`, {
         headers: { Authorization: `Bearer ${token}` }
-      })
+      });
+
       if (response.status === 200) {
-        setDashboard(response.data)
+        setDashboard(response.data);
+        // setDashboardApiStatus(API_STATUS.SUCCESS);
       }
     } catch (error) {
-      console.log(error)
-      setDashboard({})
+      console.log(error);
+      // setDashboardApiStatus(API_STATUS.FAILED);
     }
-  }
+  };
+
 
   const fetchStores = async () => {
     try {
+      setStoreApiStatus(API_STATUS.IN_PROGRESS);
+
       const params = new URLSearchParams({
         search: storeSearchQuery,
-        sortBy: storeSortBy
-
-      })
+        sortBy: storeSortBy,
+        page: storeCurrentPage
+      });
 
       const response = await axios.get(`${url}/admin/stores?${params}`, {
         headers: { Authorization: `Bearer ${token}` }
-      })
+      });
 
       if (response.status === 200) {
-        setStores(response.data.stores || [])
-        setStoreLoader(false)
+        setStores(response.data.stores || []);
+        setStorePagination({
+          totalPages: response.data.pagination.totalPages,
+          total: response.data.pagination.total,
+        });
+        setStoreApiStatus(API_STATUS.SUCCESS);
       }
     } catch (error) {
-      console.log('stores: ', error)
-      setStores([])
+      console.log('stores:', error);
+      setStores([]);
+      setStoreApiStatus(API_STATUS.FAILED);
     }
-  }
+  };
 
-  useEffect(() => { fetchDashboard() }, [url, token])
-  useEffect(() => { fetchUsers() }, [url, token, userSearchQuery, userSortBy, activeModal])
-  useEffect(() => { fetchStores() }, [url, token, storeSearchQuery, storeSortBy, activeModal])
+  useEffect(() => { getAllUsers() }, [url, token, activeModal])
+  useEffect(() => { fetchDashboard() }, [url, token, activeModal])
+  useEffect(() => { fetchUsers() }, [url, token, userSearchQuery, userCurrentPage, userSortBy, activeModal, activeModal])
+  useEffect(() => { fetchStores() }, [url, token, storeSearchQuery, storeCurrentPage, storeSortBy, activeModal, activeModal])
+
+  useEffect(() => {
+    setUserCurrentPage(1);
+  }, [userSearchQuery, userSortBy]);
+
+  useEffect(() => {
+    setStoreCurrentPage(1);
+  }, [storeSearchQuery, storeSortBy]);
+
 
   const closeModal = () => {
     setActiveModal(null)
     setSelectedId(null)
+  }
+
+  const handlePaginationNUser = () => {
+    setUserCurrentPage(prev => prev - 1)
+  }
+
+  const handlePaginationPUser = () => {
+    setUserCurrentPage(prev => prev + 1)
+  }
+
+  const handlePaginationNStore = () => {
+    setStoreCurrentPage(prev => prev - 1)
+  }
+
+  const handlePaginationPStore = () => {
+    setStoreCurrentPage(prev => prev + 1)
   }
 
   const openAddUser = () => setActiveModal('addUser')
@@ -104,6 +188,19 @@ const AdminDashboard = () => {
     setActiveModal('viewUser')
   }
 
+  const FailureView = ({ onRetry }) => (
+    <div className="flex flex-col items-center justify-center py-10 gap-3">
+      <p className="text-gray-600 font-medium">Something went wrong</p>
+      <button
+        onClick={onRetry}
+        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded-md text-sm"
+      >
+        Try Again
+      </button>
+    </div>
+  );
+
+
   return (
     <>
       <div>
@@ -112,7 +209,7 @@ const AdminDashboard = () => {
           <h2 className='text-2xl lg:text-3xl font-bold text-gray-900'>Admin Dashboard</h2>
 
           {/* Dashboard Summary */}
-          <div className='grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-20 lg:gap-50'>
+          <div className='grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-10 lg:gap-25 xl:gap-50'>
             <div className='flex flex-col border border-gray-300 shadow-lg gap-2 p-2 px-4 rounded-md hover:shadow-xl transition-shadow'>
               <p className='text-sm text-gray-500 font-medium'>Total Users</p>
               <h4 className='text-3xl text-gray-900 font-semibold'>{dashboard.totalUsers || 0}</h4>
@@ -162,8 +259,41 @@ const AdminDashboard = () => {
                 <option value="address">Sort by Location</option>
               </select>
             </div>
-            {userLoader ? <Loader /> : 
-            <Table setSelectedId={openViewUser} details={users} />}
+            {userApiStatus === API_STATUS.IN_PROGRESS && <Loader />}
+
+            {userApiStatus === API_STATUS.FAILED && (
+              <FailureView onRetry={fetchUsers} />
+            )}
+
+            {userApiStatus === API_STATUS.SUCCESS && (
+              <>
+                <Table setSelectedId={openViewUser} details={users} />
+
+                {/* Pagination */}
+                <div className="flex justify-center gap-2 items-center mt-6">
+                  <button
+                    onClick={handlePaginationNUser}
+                    disabled={userCurrentPage === 1}
+                    className="bg-[#d33b3b] disabled:opacity-50 py-0.5 px-3 text-sm rounded-sm text-white font-medium"
+                  >
+                    Previous
+                  </button>
+
+                  <p className="text-lg font-medium text-gray-600">{userCurrentPage}</p>
+
+                  <button
+                    onClick={handlePaginationPUser}
+                    disabled={userCurrentPage === userPagination.totalPages}
+                    className="bg-[#d33b3b] disabled:opacity-50 py-0.5 px-3 text-sm rounded-sm text-white font-medium"
+                  >
+                    Next
+                  </button>
+                </div>
+              </>
+            )}
+
+
+            \
           </div>
 
           {/* Stores Section */}
@@ -178,7 +308,7 @@ const AdminDashboard = () => {
               </button>
             </div>
 
-          
+
             <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
               <div className='flex items-center border-2 border-gray-200 rounded-sm gap-2 py-2 px-3 bg-gray-50'>
                 <Search className='w-4 h-4 text-gray-500' />
@@ -201,9 +331,40 @@ const AdminDashboard = () => {
                 <option value="address">Sort by Location</option>
               </select>
             </div>
-            
-            {storeLoader ? <Loader /> : 
-            <TableS details={stores} />}
+
+            {storeApiStatus === API_STATUS.IN_PROGRESS && <Loader />}
+
+            {storeApiStatus === API_STATUS.FAILED && (
+              <FailureView onRetry={fetchStores} />
+            )}
+
+            {storeApiStatus === API_STATUS.SUCCESS && (
+              <>
+                <TableS details={stores} />
+
+                {/* Pagination */}
+                <div className="flex justify-center gap-2 items-center mt-6">
+                  <button
+                    onClick={handlePaginationNStore}
+                    disabled={storeCurrentPage === 1}
+                    className="bg-[#d33b3b] disabled:opacity-50 py-0.5 px-3 text-sm rounded-sm text-white font-medium"
+                  >
+                    Previous
+                  </button>
+
+                  <p className="text-lg font-medium text-gray-600">{storeCurrentPage}</p>
+
+                  <button
+                    onClick={handlePaginationPStore}
+                    disabled={storeCurrentPage === storePagination.totalPages}
+                    className="bg-[#d33b3b] disabled:opacity-50 py-0.5 px-3 text-sm rounded-sm text-white font-medium"
+                  >
+                    Next
+                  </button>
+                </div>
+              </>
+            )}
+
           </div>
         </div>
       </div>
@@ -219,7 +380,7 @@ const AdminDashboard = () => {
             onClick={(e) => e.stopPropagation()}
           >
             {activeModal === 'addUser' && <PostUser onClose={closeModal} />}
-            {activeModal === 'addStore' && <PostStore onClose={closeModal} users={users} />}
+            {activeModal === 'addStore' && <PostStore onClose={closeModal} owner={owner} />}
             {activeModal === 'viewUser' && <UserDetails onClose={closeModal} id={selectedId} />}
           </div>
         </div>

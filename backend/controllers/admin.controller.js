@@ -52,35 +52,65 @@ const dashboard =  async (req, res) => {
 
 const getStores = async (req, res) => {
   try {
-    const { search = '', sortBy = 'name', sortOrder = 'ASC' } = req.query;
+    const { search = '', sortBy = 'name', sortOrder = 'ASC', page = 1 } = req.query;
     
-    // Validate sort options
+    const LIMIT = 6
+
     const validSorts = ['name', 'email', 'address'];
     const validOrders = ['ASC', 'DESC'];
-    
+
     const sortField = validSorts.includes(sortBy) ? sortBy : 'name';
     const sortDir = validOrders.includes(sortOrder) ? sortOrder : 'ASC';
 
-    const filterQuery = `
-      SELECT s.id, s.name, s.email, s.address, s.owner_id,
-             ROUND(AVG(r.rating), 2) as average_rating,
-             COUNT(r.rating) as total_ratings
+    const offset = (Number(page) - 1) * LIMIT;
+
+    // 🔹 total count
+    const countQuery = `
+      SELECT COUNT(DISTINCT s.id) as total
+      FROM stores s
+      WHERE s.name LIKE ? OR s.email LIKE ? OR s.address LIKE ?
+    `;
+
+    const countResult = await db.get(countQuery, [
+      `%${search}%`,
+      `%${search}%`,
+      `%${search}%`,
+    ]);
+
+    const total = countResult.total;
+    const totalPages = Math.ceil(total / LIMIT);
+
+    // 🔹 paginated stores
+    const dataQuery = `
+      SELECT 
+        s.id, s.name, s.email, s.address, s.owner_id,
+        ROUND(AVG(r.rating), 2) as average_rating,
+        COUNT(r.rating) as total_ratings
       FROM stores s 
       LEFT JOIN ratings r ON s.id = r.store_id
-      WHERE s.name LIKE ? 
-         OR s.email LIKE ? 
-         OR s.address LIKE ?
+      WHERE s.name LIKE ? OR s.email LIKE ? OR s.address LIKE ?
       GROUP BY s.id
       ORDER BY s.${sortField} ${sortDir}
+      LIMIT ? OFFSET ?
     `;
-    
-    const stores = await db.all(filterQuery, [
+
+    const stores = await db.all(dataQuery, [
       `%${search}%`,
       `%${search}%`,
-      `%${search}%`
+      `%${search}%`,
+      LIMIT,
+      offset,
     ]);
-    
-    return res.status(200).json({ stores });
+
+    return res.status(200).json({
+      stores,
+      pagination: {
+        total,
+        totalPages,
+        currentPage: Number(page),
+        limit: LIMIT,
+      },
+    });
   } catch (error) {
     console.log('Filter Stores:', error.message);
     return res.status(500).json({ message: 'Something went wrong! Try again' });
@@ -109,28 +139,83 @@ const addStore = async (req, res) => {
 
 const getUsers = async (req, res) => {
   try {
-    const { search = '', sortBy = 'name', sortOrder = 'ASC' } = req.query;
+    const { search = '', sortBy = 'name', sortOrder = 'ASC', page = 1 } = req.query;
     
-    // Fix: Declare variables BEFORE using them
+    const LIMIT = 6
+
     const validSorts = ['name', 'email', 'address'];
     const validOrders = ['ASC', 'DESC'];
-    
-    const sortField = validSorts.includes(sortBy) ? sortBy : 'name';  // ✅ FIXED
+
+    const sortField = validSorts.includes(sortBy) ? sortBy : 'name';
     const sortDir = validOrders.includes(sortOrder) ? sortOrder : 'ASC';
 
-    const searchQuery = `
-      SELECT * FROM users 
+    const offset = (Number(page) - 1) * LIMIT;
+
+    // 🔹 total count
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM users
+      WHERE name LIKE ? OR email LIKE ? OR address LIKE ?
+    `;
+
+    const countResult = await db.get(countQuery, [
+      `%${search}%`,
+      `%${search}%`,
+      `%${search}%`,
+    ]);
+
+    const total = countResult.total;
+    const totalPages = Math.ceil(total / LIMIT);
+
+    // 🔹 paginated users
+    const dataQuery = `
+      SELECT *
+      FROM users
       WHERE name LIKE ? OR email LIKE ? OR address LIKE ?
       ORDER BY ${sortField} ${sortDir}
+      LIMIT ? OFFSET ?
     `;
-    
-    const users = await db.all(searchQuery, [`%${search}%`, `%${search}%`, `%${search}%`]);
-    return res.status(200).json({ users });
+
+    const users = await db.all(dataQuery, [
+      `%${search}%`,
+      `%${search}%`,
+      `%${search}%`,
+      LIMIT,
+      offset,
+    ]);
+
+    return res.status(200).json({
+      users,
+      pagination: {
+        total,
+        totalPages,
+        currentPage: Number(page),
+        limit: LIMIT,
+      },
+    });
   } catch (error) {
     console.log('Filter Users:', error.message);
     return res.status(500).json({ message: 'Something went wrong! Try again' });
   }
 };
+
+const allUsers = async (req, res) => {
+  try {
+    const query = `
+      SELECT id, name, email, role 
+      FROM users 
+      WHERE role = 'owner'
+    `;
+
+    const users = await db.all(query);
+    return res.status(200).json({ users });
+  } catch (error) {
+    console.log('all Users:', error.message);
+    return res.status(500).json({ message: 'Something went wrong! Try again' });
+  }
+};
+
+
 
 const getUser = async (req, res) => {
   try {
@@ -161,4 +246,4 @@ const getUser = async (req, res) => {
   }
 }
 
-module.exports = { addUser: [require('../middleware/validate.middleware').validateSignup, addUser], dashboard, getStores, addStore,  getUsers, getUser }
+module.exports = { addUser: [require('../middleware/validate.middleware').validateSignup, addUser], dashboard, getStores, addStore, allUsers,  getUsers, getUser }

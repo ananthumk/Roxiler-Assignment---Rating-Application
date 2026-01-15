@@ -61,7 +61,7 @@ const Table = ({ details, setSelectedId }) => {
                           setOpenId(null)
                         }}
                       >
-                        👁️ View Details
+                        View Details
                       </button>
                     </div>
                   )}

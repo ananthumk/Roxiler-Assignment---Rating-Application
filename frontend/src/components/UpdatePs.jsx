@@ -5,12 +5,13 @@ import axios from 'axios'
 
 const UpdatePassword = ({ onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
+    oldPassword: '',
+    newPassword: ''
   })
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [msg, setMsg] = useState('')
   const [showPassword, setShowPassword] = useState({
     current: false,
     new: false,
@@ -21,7 +22,7 @@ const UpdatePassword = ({ onClose, onSuccess }) => {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
-    setError('') // Clear error on type
+    setError('') 
   }
 
   const togglePassword = (field) => {
@@ -37,26 +38,23 @@ const UpdatePassword = ({ onClose, onSuccess }) => {
     setError('')
 
     // Simple validation
-    if (formData.newPassword !== formData.confirmPassword) {
+    if (formData.newPassword !== confirmPassword) {
       setError("Passwords don't match")
       setIsLoading(false)
       return
     }
 
-    if (formData.newPassword.length < 6) {
-      setError('Password must be at least 6 characters')
-      setIsLoading(false)
-      return
-    }
+    
 
     try {
-      await axios.put(`${url}/auth/update-password`, formData, {
+      await axios.patch(`${url}/auth/update-password`, formData, {
         headers: { Authorization: `Bearer ${token}` }
       })
       onClose()
       onSuccess?.()
     } catch (error) {
       setError(error.response?.data?.message || 'Failed to update password')
+      
     } finally {
       setIsLoading(false)
     }
@@ -93,8 +91,8 @@ const UpdatePassword = ({ onClose, onSuccess }) => {
           <div className="relative">
             <input 
               type={showPassword.current ? 'text' : 'password'}
-              name="currentPassword"
-              value={formData.currentPassword}
+              name="oldPassword"
+              value={formData.oldPassword}
               onChange={handleChange}
               className="w-full p-2 pr-10 border-2 border-gray-200 rounded-md focus:border-blue-500 focus:ring-2 focus:ring-blue-100/50 transition-all text-md bg-gray-50/50 hover:bg-white"
               placeholder="Enter current password"
@@ -148,8 +146,8 @@ const UpdatePassword = ({ onClose, onSuccess }) => {
             <input 
               type={showPassword.confirm ? 'text' : 'password'}
               name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full p-2 pr-10 border-2 border-gray-200 rounded-md focus:border-purple-500 focus:ring-2 focus:ring-purple-100/50 transition-all text-md bg-gray-50/50 hover:bg-white"
               placeholder="Confirm new password"
               required

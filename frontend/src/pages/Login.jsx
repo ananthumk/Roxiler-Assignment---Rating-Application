@@ -10,7 +10,7 @@ import { AppContext } from '../context/storeContext';
 const LoginForm = () => {
   const [loginDetails, setLogin] = useState({ email: '', password: '' });
   const [errMsg, setErrMsg] = useState('');
-  const { url, setCurrentUser } = useContext(AppContext);
+  const { url, setCurrentUser, setToken } = useContext(AppContext);
   console.log(url)
   const navigate = useNavigate();
 
@@ -34,7 +34,8 @@ const LoginForm = () => {
         setLogin({ email: '', password: '' });
         localStorage.setItem('token', response.data.token);
         setCurrentUser(response.data.user);
-
+        setToken(response.data.token) 
+        
         if (response.data.user.role === 'user') {
           navigate('/');
         } else if (response.data.user.role === 'admin') {
@@ -122,14 +123,13 @@ const LoginForm = () => {
             </button>
           </form>
 
-          {/* Error Message */}
+          
           {errMsg && (
             <p className="mt-6 p-4 bg-red-50 border border-red-200 text-red-700 text-center rounded-xl text-sm font-medium">
               {errMsg}
             </p>
           )}
 
-          {/* Register Link */}
           <div className="mt-8 text-center">
             <p className="text-sm text-gray-600">
               Don't have an account?{' '}

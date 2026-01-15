@@ -1,5 +1,5 @@
 const express = require('express')
-const { addUser, dashboard, getStores, addStore, getUsers, getUser } = require('../controllers/admin.controller')
+const { addUser, dashboard, getStores, addStore, getUsers, getUser, allUsers } = require('../controllers/admin.controller')
 const { authorize, authenticate } = require('../middleware/auth.middleware')
 const adminRouter = express.Router()
 
@@ -9,5 +9,6 @@ adminRouter.get('/stores',authenticate, authorize(['admin']), getStores)
 adminRouter.post('/stores',authenticate, authorize(['admin']), addStore)
 adminRouter.get('/users',authenticate, authorize(['admin']), getUsers)
 adminRouter.get('/users/:id',authenticate, authorize(['admin']), getUser)
+adminRouter.get('/allusers',authenticate, authorize(['admin']), allUsers)
 
 module.exports = adminRouter

@@ -1,28 +1,55 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
 import { Route, Routes } from 'react-router-dom'
+
 import LoginForm from './pages/Login'
 import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
 import AdminDashboard from './pages/AdminDashboard'
 import OwnerDashboard from './pages/OwnerDashboard'
+
 import ProtectedRoute from './components/ProtectedRoute'
+import PublicRoute from './components/PublicRoute'
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-     <Routes>
-      <Route path='/login' element={<LoginForm />} />
-      <Route path='/register' element={<Signup />} />
-      <Route path='/' element={<ProtectedRoute element={<Dashboard />} /> } />
-      <Route path='/admin' element={<ProtectedRoute element={<AdminDashboard />} /> } />
-      <Route path='/owner' element={<ProtectedRoute element={<OwnerDashboard />} /> } />
-     </Routes>
-    </>
+    <Routes>
+
+
+      <Route path="/login" element={<PublicRoute><LoginForm /></PublicRoute>} />
+
+      <Route path="/register" element={<PublicRoute><Signup /></PublicRoute>} />
+
+      {/* USER */}
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute allowedRoles={['user', 'admin', 'owner']}>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ADMIN */}
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* OWNER */}
+      <Route
+        path="/owner"
+        element={
+          <ProtectedRoute allowedRoles={['owner']}>
+            <OwnerDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+    </Routes>
   )
 }
 
