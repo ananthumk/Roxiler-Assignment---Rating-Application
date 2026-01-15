@@ -6,9 +6,9 @@ Deployed Links
 
 Frontend URL: https://roxiler-assignment-rating-application.onrender.com
 
-Backend API URL: https://your-backend-url.com
+Backend API URL: https://roxiler-assignment-rating-applicati.vercel.app
 
-(Replace with your actual deployed links)
+
 
 Tech Stack
 Frontend
